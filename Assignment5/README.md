@@ -50,5 +50,5 @@ U R R R R R U U L L
 
 Done
 
-## Change with different epsilong values:
+## Change with different epsilon values:
 I ran my program with epsilon values ranging from 0.5 to 20.5 incrementing by 0.5 at a time. I noticed that the optimal path to the goal did not change based on epsilon value change. The Action policy (the optimal direction for each cell in the matrix, not counting walls) did change as the values of epsilon got higher as did the utility which gave influence to the optimal direction. I believe the reason for this is because as the max allowable error of utility in any state grows larger, the true optimal path will be distorted. The max change of any utility of a state in an iteration goes up, and therefore the error goes up, so the optimal path gets less and less optimal with higher values of epsilon.
