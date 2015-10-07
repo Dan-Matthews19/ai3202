@@ -86,18 +86,18 @@ class Node(object):
 
 
 def buildWorld(fileName):
-	worldMaze = []
-	worldFile = open(fileName, "r").readlines()
-	for line in reversed(worldFile):
-		worldMaze.append(line.split(" "))
+	worldMatix = []
+	fn = open(fileName, "r").readlines()
+	for line in reversed(fn):
+		worldMatix.append(line.split(" "))
 	
-	nodeMaze = []
-	for i in range(len(worldMaze)):
-		nodeMaze.append([])
-		for j in range(len(worldMaze[i])):
-			nodeMaze[i].append(Node((j, i), int(worldMaze[i][j])))
+	nodeMatrix = []
+	for i in range(len(worldMatix)):
+		nodeMatrix.append([])
+		for j in range(len(worldMatix[i])):
+			nodeMatrix[i].append(Node((j, i), int(worldMatix[i][j])))
 
-	return nodeMaze	
+	return nodeMatrix	
 	
 
 
