@@ -34,9 +34,9 @@
 import heapq
 
 #Major Packages
-from numarray import *
-import numarray.ieeespecial as ieee
-import numarray.random_array as ra
+from numpy import *
+# import numpy.ieeespecial as ieee
+import numpy.random as ra
 
 #Local Project Modules
 from __init__ import *
@@ -45,18 +45,19 @@ from Node import *
 from Distribution import *
 from Utilities.Utilities import *
 from Utilities import GraphUtilities
+import copy
 
-"""This is the InferenceEngine module.  It defines all inference algorithms.  All of these inference algorithms are implemented as "engines", which means that they wrap around a bayes net in order to create a new inference object that can be treated abstractly.  One reason for this is that abstract inference objects can be used by other methods such as learning algorithms in the same ways regardless of which inference method is actually being used. 
+"""This is the InferenceEngine module.  It defines all inference algorithms.  All of these inference algorithms are implemented as "engines", which means that they wrap around a bayes net in order to create a new inference object that can be treated abstractly.  One reason for this is that abstract inference objects can be used by other methods such as learning algorithms in the same ways regardless of which inference method is actually being used.
 """
 
 class InferenceEngine:
     """ This is the parent class of all inference engines.  It defines several very basic methods that are used by all inference engines.
     """
-    
+
     def __init__(self, bnet):
         self.bnet = bnet
         self.evidence = Evidence(zip(bnet.nodes, [-1]*len(bnet.nodes)))
-    
+
     def marginal(self):
         self.action()
 
@@ -66,7 +67,7 @@ class EnumerationEngine(InferenceEngine):
     """
 
     def marginal(self, nodes):
-        if not isinstance(nodes, types.ListType):
+        if not isinstance(nodes, list):
             nodes = [nodes]
         # Compute the marginal for each node in nodes
         distList = list()
@@ -86,7 +87,7 @@ class EnumerationEngine(InferenceEngine):
             Q.normalize()
             distList.append(Q)
         return distList
-    
+
     """ The following methods could be functions, but I made them private methods because the are functions that should only be used internally to the class. ADVICE: James, do you think these should remain as private methods or become function calls?
     """
 
@@ -106,17 +107,17 @@ class EnumerationEngine(InferenceEngine):
         self.evidence[nonEvidence] = -1
         self.evidence[node] = oldValue
         return prob
-    
+
     def __initialize(self, nonEvidence):
         self.evidence[nonEvidence] = 0
-    
+
     def __next_state(self, nonEvidence):
         # Generate the next possible state of the evidence.
         for node in nonEvidence:
             if self.evidence[node] == (node.size() - 1):
                 # If the value of the node is its max value, then reset it.
                 if node == nonEvidence[-1]:
-                    # If we iterated through to the last nonEvidence node, and didn't find a new 
+                    # If we iterated through to the last nonEvidence node, and didn't find a new
                     # value, then we have visited every possible state.
                     return False
                 else:
@@ -126,7 +127,7 @@ class EnumerationEngine(InferenceEngine):
                 self.evidence[node] += 1
                 break
         return True
-        
+
     def __probability(self, state):
         # Compute the probability of the state of the bayes net given the values of state.
         Q = 1
@@ -145,11 +146,11 @@ class MCMCEngine(InferenceEngine):
         #X is a list of variables
         #N is thenumber of samples
         def marginal (self, X, N):
-            if not isinstance(X, types.ListType):
+            if not isinstance(X, list):
                 X = [X]
             Nx = [DiscreteDistribution(x) for x in X]
             queryIndex = array([x.index for x in X])
-            state = copy.copy(self.evidence)
+            state = copy(self.evidence)
             nonEvidence = state.empty()
             randMax = array([node.size() for node in nonEvidence])
             #ASSUMPTION: zero is the minimum value
@@ -167,11 +168,11 @@ class MCMCEngine(InferenceEngine):
                             val = self.sample_value_given_mb(node, state)
                             #change the state to reflect new value of given variable
                             if not state[node] == val:
-                                state[node] = val             
+                                state[node] = val
             for dist in Nx:
                 dist.normalize()
             return Nx
-                                
+
 
         def sample_value_given_mb(self, node, state):
             MBval = DiscreteDistribution(node)
@@ -190,7 +191,7 @@ class MCMCEngine(InferenceEngine):
                     index = child.dist.generate_index(vals, range(child.dist.nDims))
                     MBval[MBindex] *= child.dist[index]
             state[node] = oldVal
-            MBval.normalize()                
+            MBval.normalize()
             val = MBval.sample()
             return val
 
@@ -208,7 +209,7 @@ class JunctionTreeEngine(InferenceEngine):
         triangulatedGraph = TriangleGraph( moralGraph )
         # Build a join tree and initialize it.
         self.joinTree = self.build_join_tree(triangulatedGraph)
-    
+
     #def change_evidence(self, nodes, values):
         #""" Override parent's method because in a junction tree we have to perform an update or a retraction based on the changes to the evidence.
         #"""
@@ -225,37 +226,37 @@ class JunctionTreeEngine(InferenceEngine):
                     #break
                 #else:
                     #isChange = 1
-        
+
         #if isChange == 1:
             ## Just to avoid import errors
             #assert(1 == 1)
-            
+
             ## Do a global update
             #for node in changedNodes:
                 ## Just to avoid import errors
                 #assert(1 == 1)
-            
+
                 ## Update potential X and its likelihood with the new observation
-                ## Then do global propagation (if only 1 cluster affected only have 
+                ## Then do global propagation (if only 1 cluster affected only have
                 ## to distribute evidence.
         #elif isChange == 2:
-            ## Do a global retraction: Encode the new likelihoods (and do observation entry), 
+            ## Do a global retraction: Encode the new likelihoods (and do observation entry),
             ## Reinitialize the join tree, do a Global propagation.
-            
+
             ## Just to avoid import errors
             #assert(1 == 1)
-                
+
     def marginal(self, query):
         # DELETE: When change_evidence is completed delete this.
         if not self.joinTree.initialized:
             self.joinTree.reinitialize(self.bnet.nodes)
-        
+
         self.joinTree.enter_evidence(self.evidence, self.bnet.nodes)
         self.global_propagation()
         # DELETE: End delete here
-        
+
         distributions = []
-        if not isinstance(query, types.ListType):
+        if not isinstance(query, list):
             query = [query]
         for node in query:
             Q = DiscreteDistribution(node)
@@ -265,18 +266,18 @@ class JunctionTreeEngine(InferenceEngine):
                 distIndex = Q.generate_index([value], range(Q.nDims))
                 #FIXME: must be a better way to handle sum problem
                 val = potential[index]
-                if isinstance(val, ArrayType):
+                if isinstance(val, ndarray):
                     val = val.sum()
                 Q[distIndex] = val
             Q.normalize()
             distributions.append(Q)
         return distributions
-        
+
     def global_propagation(self):
         self.joinTree.initialized = False
         # Arbitrarily pick a clique to be the root node, could be OPTIMIZED
         startClique = self.joinTree.nodes.pop()
-        # Seems very awkward, but with sets there is no 
+        # Seems very awkward, but with sets there is no
         # way that I know of to get an element without popping it off.
         self.joinTree.nodes.add(startClique)
         GraphUtilities.unmark_all_nodes(self.joinTree)
@@ -284,7 +285,7 @@ class JunctionTreeEngine(InferenceEngine):
         self.collect_evidence(0, startClique, 0, True)
         GraphUtilities.unmark_all_nodes(self.joinTree)
         self.distribute_evidence(startClique)
-    
+
     def collect_evidence(self, prevClique, currentClique, sepset, isStart):
         # In this stage we send messages from the outer nodes toward a root node.
         currentClique.visited = 1
@@ -296,7 +297,7 @@ class JunctionTreeEngine(InferenceEngine):
             # After we have found the leaf (or iterated over all neighbors) send a message
             # back toward the root.
             self.pass_message(currentClique, prevClique, sepset)
-    
+
     def distribute_evidence(self, clique):
         # Send messages from root node out toward leaf nodes
         clique.visited = 1
@@ -305,14 +306,14 @@ class JunctionTreeEngine(InferenceEngine):
             if not neighbor.visited:
                 self.pass_message(clique, neighbor, sep)
                 self.distribute_evidence(neighbor)
-    
+
     def pass_message(self, fromClique, toClique, sepset):
         # Project the fromCluster onto the sepset, oldSepsetPotential is the sepset's potential
         # before it is affected by the internals of project
-        oldSepsetPotential = self.project(fromClique, sepset) 
+        oldSepsetPotential = self.project(fromClique, sepset)
         # Absorb the sepset into the toCluster
         self.absorb(toClique, sepset, oldSepsetPotential)
-    
+
     def project(self, clique, sepset):
         """ We want to project from the clique to the sepset.  We do this by marginalizing the clique potential into the sepset potential.
         """
@@ -320,7 +321,7 @@ class JunctionTreeEngine(InferenceEngine):
         # OPTIMIZE: Write a new function that does this in place.
         sepset.potential = clique.potential.marginalize(sepset.potential)
         return oldSepsetPotential
-            
+
     def absorb(self, clique, sepset, oldPotential):
         """ absorb divides the sepset's potential by the old potential.  The result is multiplied by the clique's potential.  Please see c. Huang and A. Darwiche 96.  As with project, this could be optimized by finding the best set of axes to iterate over (either the sepsets, or the clique's axes that are not in the sepset).  The best solution would be to define a multiplication operation on a Potential that hides the details.
         """
@@ -354,7 +355,7 @@ class JunctionTreeEngine(InferenceEngine):
             tree = forest[0]
         tree.init_clique_potentials(self.bnet.nodes)
         return tree
-    
+
     def create_sepset_priority_queue(self, cliques):
         """ Create a sepset (with a unique id) for every unique pair of cliques, and insert it into a priority queue.
         """
@@ -366,12 +367,12 @@ class JunctionTreeEngine(InferenceEngine):
                 id += 1
                 heapq.heappush(sepsetHeap, sepset)
         return sepsetHeap
-    
+
 
 class JunctionTreeDBNEngine(JunctionTreeEngine):
     """ JunctionTreeDBNEngine is the JunctionTreeEngine for dynamic networks.  It is far from done.  This is more of a place holder as of right now.
     """
-    
+
     def __init__(self, DBN):
         InferenceEngine.__init__(DBN)
         moral = MoralDBNGraph(DBN)
@@ -379,4 +380,3 @@ class JunctionTreeDBNEngine(JunctionTreeEngine):
         triangulatedGraph = TriangleGraph( moralGraph )
         #build a join tree and initialize it
         self.joinTree = self.BuildJoinTree(triangulatedGraph)
-        

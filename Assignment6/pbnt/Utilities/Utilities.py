@@ -31,25 +31,25 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import generators
-from numarray import *
-import numarray.random_array as ra
+from numpy import *
+import numpy.random as ra
 from pbnt.__init__ import BLANKEVIDENCE
 
 from __init__ import *
 
 # Miscellaneous utility functions for use with the rest of the BayesNet Package
-    
-#Checks if a and b are equal within a fraction of error.  
+
+#Checks if a and b are equal within a fraction of error.
 #The error is that normally introduced by the imprecision of Floating point numbers
 #now outdated, use allclose
 def myFloatEQ ( a , b ):
-    
+
     bHigh = b + 0.000000000100000000
     bLow = b - 0.000000000010000000
-    
+
     if a < bHigh and a > bLow:
         return True
-    
+
     return False
 
 # Exactly the same as for sets, except designed for lists
@@ -67,7 +67,7 @@ def issuperst(L1, L2):
     return True
 
 #returns an array of unique elements given the elements in the input arrays, all arrays must be input as a tuple
-#this is VERY UNOPTIMIZED, should be replaced later by a UFUNC in Numarray, but we will wait to do that
+#this is VERY UNOPTIMIZED, should be replaced later by a UFUNC in numpy, but we will wait to do that
 #arrays assumed to be 1D
 def unique( arrayTuple ):
     master = concatenate( arrayTuple )
@@ -82,22 +82,22 @@ def addToPriorityQueue( queue, element ):
     if len( queue) == 0:
         queue.append( element )
         return queue
-    
+
     for e in queue:
         if element > e:
             index = queue.index( e )
             queue = queue[0:index] + [element] + queue[index:]
             return queue
-    
+
     queue.append( element )
     return queue
 
 def intersect( L1, L2 ):
     return [e for e in L1 if e in L2]
-        
+
 
 def sample(arr):
-    #given an array of probabilities return a randomly generated int with 
+    #given an array of probabilities return a randomly generated int with
     #probability equal to the values of array
     nPossibleValues = len(arr)
     rnum = ra.random()
@@ -109,13 +109,13 @@ def sample(arr):
         else:
             probRange += prob
             i += 1
-    
+
     return i
 
 def updateCounts(nodes, counts, data):
     assert(isinstance(bnet, Graph))
-    assert(isinstance(counts, ArrayType))
-    assert(isinstance(data, ArrayType))
+    assert(isinstance(counts, ndarray))
+    assert(isinstance(data, ndarray))
     for node in nodes:
         count = counts[node.index]
         indices = data[concatenate((node.parentIndex, array([node.index])))]
@@ -123,7 +123,7 @@ def updateCounts(nodes, counts, data):
         count.flat[fIndex] += 1
 
 def sequence_generator(iterObjs):
-    assert(isinstance(iterObjs, ArrayType))
+    assert(isinstance(iterObjs, ndarray))
     stop = iterObjs - 1
     value = zeros(len(iterObjs))
     value[0] -= 1
@@ -142,45 +142,38 @@ class Evidence(dict):
     """ This is the data structure for evidence.  It acts exactly like a dictionary except that it will take lists of keys with the [] notation, rather than just single keys.
     """
     def __setitem__(self, keys, values):
-        if not isinstance(keys, types.ListType):
+        if not isinstance(keys, list):
             keys = [keys]
             values = [values]
-        elif (not isinstance(values, types.ListType)) and (not isinstance(values, ArrayType)):
+        elif (not isinstance(values, list)) and (not isinstance(values, ndarray)):
             values = [values]*len(keys)
         items = zip(keys,values)
         self.update(items)
-    
+
     def __getitem__(self, keys):
-        if isinstance(keys, types.ListType):
+        if isinstance(keys, list):
             values = []
             for key in keys:
                 values.append(self.get(key))
         else:
             values = self.get(keys)
         return values
-    
+
     def empty(self):
         nonEvidence = []
         for item in self.items():
             if item[1] == BLANKEVIDENCE:
                 nonEvidence.append(item[0])
         return nonEvidence
-    
+
     def set_nodes(self):
         ev = []
         for item in self.items():
             if item[1] != BLANKEVIDENCE:
                 ev.append(item[0])
         return ev
-    
+
     def __copy__(self):
         new = Evidence()
         new.update(self.items())
         return new
-    
-        
-                
-            
-    
-
-

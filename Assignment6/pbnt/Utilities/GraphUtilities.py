@@ -30,7 +30,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from numarray import *
+from numpy import *
 
 
 def connectNodes( node1, node2 ):
@@ -50,7 +50,7 @@ def addClique( cliqueList, clique ):
         if c.contains( clique.nodes ):
             add = 0
             break
-    
+
     if add:
         cliqueList.append( clique )
 
@@ -67,41 +67,41 @@ def missing_edges( node ):
                 if not otherNeighbor in neighbor.neighbors:
                     edges.append([neighbor, otherNeighbor])
     return edges
-                
-                
+
+
 def generateArrayIndex( dimsToIter, axesToIter, constValues, constAxes ):
     if len( axesToIter ) == 0:
         return constValues
     totalNumAxes = len( axesToIter ) + len( constAxes )
     indexList = [array([]) for dim in range( totalNumAxes )]
-    
+
     indexList = generateArrayIndexHelper( 0, array(dimsToIter), array(axesToIter), indexList )
-    
+
     nIndices = product(array( dimsToIter ))
     for (val, axis) in zip( constValues, constAxes ):
         indexList[axis] = ones([nIndices]) * val
-    
+
     return array(indexList)
 
 def generateArrayIndexHelper( val, dims, axes, indexList ):
     #if we have iterated through all of the dimensions
     if len( dims ) == 0:
         return indexList
-    
+
     #if we have iterated through all of the values
     if val == dims[0]:
         return indexList
-    
+
     indexList[axes[0]] = concatenate( (indexList[axes[0]], ones([product(dims[1:])]) * val) )
     indexList = generateArrayIndexHelper( 0, dims[1:], axes[1:], indexList )
     return generateArrayIndexHelper( val+1, dims, axes, indexList )
-    
-    
+
+
 def convertIndex( baseIndex, weights ):
     nAxes = len( baseIndex )
     nIndex = len( baseIndex[0] )
     return sum(baseIndex * reshape(repeat( weights, nIndex ), (nAxes, nIndex)), axis=0)
-    
+
 
 def generateArrayStrIndex( indices, axes, nDims ):
     indices = array(indices)
@@ -126,17 +126,17 @@ def generateArrayStrIndex( indices, axes, nDims ):
     return indexStr
 
 def flatIndex(indices, shape):
-    assert(isinstance(indices, ArrayType))
-    assert(isinstance(shape, types.TupleType))	
+    assert(isinstance(indices, ndarray))
+    assert(isinstance(shape, types.TupleType))
     flat = 0
     for i in range(len(indices)):
         flat += indices[i] * product(shape[i+1:])
-    
+
     return flat
 
 
 class InducedCluster:
-    
+
     def __init__(self, node):
         self.node = node
         self.edges = missing_edges(self.node)
@@ -150,28 +150,28 @@ class InducedCluster:
         if self.nEdges == other.nEdges and self.weight < other.weight:
             return True
         return False
-    
+
     def recompute( self ):
         self.edges = missing_edges(self.node)
         self.nEdges = len(self.edges)
         self.weight = self.compute_weight()
-    
+
     def compute_weight( self ):
         return product(array( [node.size() for node in self.node.neighbors] + [self.node.size()] ))
-    
+
 class ClusterBinaryHeap:
-        
+
         def __init__( self ):
                 self.heap = []
-        
+
         def insert( self, node ):
                 iCluster = InducedCluster(node)
                 self.heap.append(iCluster)
                 self.heap.sort()
-        
+
         def __iter__(self):
                 return self
-        
+
         def next(self):
                 if len(self.heap) == 0:
                         raise StopIteration
@@ -191,7 +191,6 @@ class ClusterBinaryHeap:
                 #reorder now that edges have changed
                 self.heap.sort()
                 return (cluster.node, cluster.edges)
-                
+
         def hasNext( self ):
                 return not len( heap ) == 0
-                
